@@ -1,0 +1,15 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local configuration and databases
+.env
+*.sqlite3
+
+# User-uploaded profile photos
+/MediCarePlus/media/profiles/*
+!/MediCarePlus/media/profiles/default-user.png
+
+# Django generated static assets
+/MediCarePlus/staticfiles/
