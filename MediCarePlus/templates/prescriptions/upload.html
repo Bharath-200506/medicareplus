@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Upload Prescription - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header bg-primary text-white py-4 text-center rounded-top-4">
+                    <i class="bi bi-file-medical fs-1 mb-2 d-block"></i>
+                    <h4 class="fw-bold mb-1">Upload Prescription</h4>
+                    <p class="mb-0 opacity-75 small">Our pharmacists will verify your prescription</p>
+                </div>
+                <div class="card-body p-5">
+                    <div class="alert alert-info d-flex align-items-start gap-2 mb-4">
+                        <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong>Guidelines:</strong>
+                            <ul class="mb-0 mt-1 small">
+                                <li>Upload a clear image of your prescription</li>
+                                <li>Accepted formats: JPG, PNG, PDF</li>
+                                <li>Maximum file size: 5MB</li>
+                                <li>Prescription must be from a registered doctor</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        <div class="upload-area border-2 border-dashed border-primary rounded-4 text-center p-5 mb-4"
+                             id="dropZone"
+                             style="cursor:pointer; border-style:dashed !important;">
+                            <div id="uploadPlaceholder">
+                                <i class="bi bi-cloud-upload text-primary fs-1 mb-3 d-block"></i>
+                                <h5 class="fw-bold mb-2">Drag & Drop your prescription here</h5>
+                                <p class="text-muted small mb-3">or click to select file</p>
+                                <label class="btn btn-primary px-4" for="prescription_file">
+                                    <i class="bi bi-folder2-open me-2"></i>Browse File
+                                </label>
+                            </div>
+                            <div id="filePreview" class="d-none">
+                                <div id="imagePreviewContainer">
+                                    <img id="imagePreview" src="" class="img-fluid rounded-3 mb-3" style="max-height:200px;" alt="Preview">
+                                </div>
+                                <div id="pdfPreviewContainer" class="d-none">
+                                    <i class="bi bi-file-pdf text-danger" style="font-size:4rem;"></i>
+                                </div>
+                                <p id="fileName" class="fw-semibold text-success mb-2"></p>
+                                <button type="button" id="changeFile" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil me-1"></i>Change File
+                                </button>
+                            </div>
+                            <input type="file" name="prescription_file" id="prescription_file"
+                                   class="d-none" accept=".jpg,.jpeg,.png,.pdf" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="bi bi-cloud-upload me-2"></i>Upload Prescription
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- My Prescriptions Link -->
+            <div class="text-center mt-3">
+                <a href="{% url 'prescriptions:list' %}" class="text-decoration-none text-primary">
+                    <i class="bi bi-list-ul me-1"></i>View My Prescriptions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const fileInput = document.getElementById('prescription_file');
+const dropZone = document.getElementById('dropZone');
+const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+const filePreview = document.getElementById('filePreview');
+const imagePreview = document.getElementById('imagePreview');
+const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+const pdfPreviewContainer = document.getElementById('pdfPreviewContainer');
+const fileName = document.getElementById('fileName');
+const changeFile = document.getElementById('changeFile');
+
+function showPreview(file) {
+    if (!file) return;
+    fileName.textContent = file.name;
+    uploadPlaceholder.classList.add('d-none');
+    filePreview.classList.remove('d-none');
+
+    if (file.type === 'application/pdf') {
+        imagePreviewContainer.classList.add('d-none');
+        pdfPreviewContainer.classList.remove('d-none');
+    } else {
+        imagePreviewContainer.classList.remove('d-none');
+        pdfPreviewContainer.classList.add('d-none');
+        const reader = new FileReader();
+        reader.onload = e => imagePreview.src = e.target.result;
+        reader.readAsDataURL(file);
+    }
+}
+
+fileInput.addEventListener('change', e => showPreview(e.target.files[0]));
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-success'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-success'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('border-success');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        showPreview(file);
+    }
+});
+
+changeFile.addEventListener('click', () => {
+    fileInput.value = '';
+    filePreview.classList.add('d-none');
+    uploadPlaceholder.classList.remove('d-none');
+});
+
+dropZone.addEventListener('click', e => {
+    if (e.target !== changeFile && !changeFile.contains(e.target)) fileInput.click();
+});
+</script>
+{% endblock %}

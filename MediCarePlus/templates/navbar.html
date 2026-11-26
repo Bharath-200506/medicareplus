@@ -1,0 +1,71 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'medicines:home' %}">
+            <i class="bi bi-heart-pulse-fill text-success me-2"></i>MediCarePlus
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'medicines:home' %}"><i class="bi bi-house me-1"></i>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'medicines:list' %}"><i class="bi bi-capsule me-1"></i>Medicines</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'appointments:doctor_list' %}"><i class="bi bi-person-badge me-1"></i>Doctors</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'chatbot:chat' %}"><i class="bi bi-robot me-1"></i>MediBot</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                {% if user.is_authenticated %}
+                    <li class="nav-item me-2">
+                        <a class="nav-link position-relative" href="{% url 'cart:cart' %}">
+                            <i class="bi bi-cart3 fs-5"></i>
+                            {% if cart_count > 0 %}
+                            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">{{ cart_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item me-2">
+                        <a class="nav-link position-relative" href="{% url 'notifications:list' %}">
+                            <i class="bi bi-bell fs-5"></i>
+                            {% if notification_count > 0 %}
+                            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">{{ notification_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                            <img src="{{ user.get_profile_image_url }}" class="rounded-circle me-2" width="32" height="32" style="object-fit:cover;">
+                            {{ user.first_name|default:user.email|truncatechars:15 }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li><a class="dropdown-item" href="{% url 'dashboard:home' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                            {% if user.role == 'PATIENT' %}
+                            <li><a class="dropdown-item" href="{% url 'orders:list' %}"><i class="bi bi-bag me-2"></i>My Orders</a></li>
+                            <li><a class="dropdown-item" href="{% url 'appointments:list' %}"><i class="bi bi-calendar me-2"></i>My Appointments</a></li>
+                            <li><a class="dropdown-item" href="{% url 'prescriptions:list' %}"><i class="bi bi-file-medical me-2"></i>Prescriptions</a></li>
+                            {% elif user.role == 'DOCTOR' %}
+                            <li><a class="dropdown-item" href="{% url 'appointments:doctor_appointments' %}"><i class="bi bi-calendar-check me-2"></i>Patient Appointments</a></li>
+                            <li><a class="dropdown-item" href="{% url 'prescriptions:review' %}"><i class="bi bi-file-medical me-2"></i>Review Prescriptions</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link text-white fw-semibold me-2" href="{% url 'accounts:doctor_login' %}"><i class="bi bi-shield-check me-1 text-success"></i>Doctor Portal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
+                    <li class="nav-item"><a class="btn btn-success ms-2" href="{% url 'accounts:register' %}">Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

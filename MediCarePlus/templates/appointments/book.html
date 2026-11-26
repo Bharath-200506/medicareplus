@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% block title %}Book Appointment - Dr. {{ doctor.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- Doctor Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-4 align-items-center">
+                        <img src="{% if doctor.doctor_profile.doctor_image %}{{ doctor.doctor_profile.doctor_image.url }}{% else %}/static/images/doctor1.jpg{% endif %}"
+                             class="rounded-circle shadow"
+                             width="80" height="80"
+                             style="object-fit:cover;">
+                        <div>
+                            <h4 class="fw-bold mb-1">Dr. {{ doctor.get_full_name }}</h4>
+                            <p class="text-primary mb-1">{{ doctor.doctor_profile.specialization }}</p>
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-mortarboard me-1"></i>{{ doctor.doctor_profile.qualification }} &nbsp;|&nbsp;
+                                <i class="bi bi-award me-1"></i>{{ doctor.doctor_profile.experience_years }} years
+                            </p>
+                        </div>
+                        <div class="ms-auto text-end">
+                            <p class="text-muted small mb-0">Consultation Fee</p>
+                            <h4 class="fw-bold text-primary mb-0">₹{{ doctor.doctor_profile.consultation_fee }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2"></i>Book Your Appointment</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Availability Schedule -->
+                        {% if availability %}
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Doctor's Available Days</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for slot in availability %}
+                                <div class="badge bg-success-soft text-success border border-success px-3 py-2 rounded-pill">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ slot.get_day_display }}: {{ slot.start_time|time:"h:i A" }} – {{ slot.end_time|time:"h:i A" }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Availability Slots Picker -->
+                        {% if availability %}
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">1. Choose a Day & Time Window <span class="text-danger">*</span></label>
+                            <div class="row g-3">
+                                {% for slot in availability %}
+                                <div class="col-md-6">
+                                    <div class="card p-3 border-2 hover-shadow cursor-pointer slot-card" 
+                                         onclick="selectSlotCard(this, '{{ slot.day }}', '{{ slot.start_time|time:'H:i' }}', '{{ slot.end_time|time:'H:i' }}')"
+                                         style="border-color: #dee2e6; transition: all 0.2s; border-style: solid; border-radius: 12px; background-color: #ffffff;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="fw-bold text-dark fs-6">{{ slot.get_day_display }}s</span>
+                                            <span class="badge bg-success-soft text-success">Active</span>
+                                        </div>
+                                        <div class="text-muted small mt-2">
+                                            <i class="bi bi-clock-fill me-1 text-primary"></i>
+                                            {{ slot.start_time|time:"h:i A" }} – {{ slot.end_time|time:"h:i A" }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">2. Select Date <span class="text-danger">*</span></label>
+                                <select name="appointment_date" id="id_appointment_date" class="form-select" required>
+                                    <option value="" disabled selected>Choose a day window above...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">3. Select Time <span class="text-danger">*</span></label>
+                                <select name="appointment_time" id="id_appointment_time" class="form-select" required>
+                                    <option value="" disabled selected>Choose a day window above...</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Reason for Appointment <span class="text-danger">*</span></label>
+                                <textarea name="reason" class="form-control" rows="4"
+                                          placeholder="Describe your symptoms or reason for consultation..."
+                                          required>{{ request.POST.reason }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Selection -->
+                        <div class="mt-4">
+                            <label class="form-label fw-semibold">4. Payment Method <span class="text-danger">*</span></label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="card p-3 border-2 h-100 cursor-pointer payment-option-card" onclick="selectPaymentMethod('ONLINE')" style="border-color: #0d6efd; border-radius: 12px; cursor: pointer; transition: all 0.2s; background-color: #f8fbff;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="payment_method" id="pay_online" value="ONLINE" checked>
+                                            <label class="form-check-label fw-bold text-dark" for="pay_online">
+                                                <i class="bi bi-credit-card-2-front text-primary me-1"></i> Pay Online Now
+                                            </label>
+                                        </div>
+                                        <p class="small text-muted mb-0 mt-2 ms-4">
+                                            Pay <strong>₹{{ doctor.doctor_profile.consultation_fee }}</strong> securely via UPI, Card, NetBanking or Test Sandbox.
+                                        </p>
+                                        <div class="mt-2 ms-4">
+                                            <span class="badge bg-success-subtle text-success border border-success small"><i class="bi bi-shield-check me-1"></i>Instant Confirmation</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card p-3 border-2 h-100 cursor-pointer payment-option-card" onclick="selectPaymentMethod('PAY_AT_CLINIC')" style="border-color: #dee2e6; border-radius: 12px; cursor: pointer; transition: all 0.2s; background-color: #ffffff;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="payment_method" id="pay_clinic" value="PAY_AT_CLINIC">
+                                            <label class="form-check-label fw-bold text-dark" for="pay_clinic">
+                                                <i class="bi bi-hospital text-secondary me-1"></i> Pay at Clinic
+                                            </label>
+                                        </div>
+                                        <p class="small text-muted mb-0 mt-2 ms-4">
+                                            Pay <strong>₹{{ doctor.doctor_profile.consultation_fee }}</strong> at the reception when you visit the clinic.
+                                        </p>
+                                        <div class="mt-2 ms-4">
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary small"><i class="bi bi-cash me-1"></i>Cash / Card at Visit</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mt-4 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Your appointment details and confirmation will be sent to your registered email address automatically.
+                        </div>
+
+                        <div class="d-flex gap-3 mt-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-calendar-check me-2"></i>Proceed & Book Appointment
+                            </button>
+                            <a href="{% url 'appointments:doctor_list' %}" class="btn btn-outline-secondary btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dayMap = {
+    'SUN': 0, 'MON': 1, 'TUE': 2, 'WED': 3, 'THU': 4, 'FRI': 5, 'SAT': 6
+};
+
+function getNextDates(dayAbbrev, count = 4) {
+    const targetDay = dayMap[dayAbbrev];
+    const dates = [];
+    let date = new Date();
+    
+    // Find next occurrence of targetDay
+    while (date.getDay() !== targetDay) {
+        date.setDate(date.getDate() + 1);
+    }
+    
+    for (let i = 0; i < count; i++) {
+        dates.push(new Date(date));
+        date.setDate(date.getDate() + 7);
+    }
+    return dates;
+}
+
+function parseTime(timeStr) {
+    const parts = timeStr.split(':');
+    return {
+        hours: parseInt(parts[0], 10),
+        minutes: parseInt(parts[1], 10)
+    };
+}
+
+function generateTimeSlots(startTimeStr, endTimeStr) {
+    const start = parseTime(startTimeStr);
+    const end = parseTime(endTimeStr);
+    const slots = [];
+    
+    let currentHour = start.hours;
+    let currentMin = start.minutes;
+    
+    while (currentHour < end.hours || (currentHour === end.hours && currentMin < end.minutes)) {
+        let period = currentHour >= 12 ? 'PM' : 'AM';
+        let displayHour = currentHour % 12 === 0 ? 12 : currentHour % 12;
+        let displayMin = currentMin.toString().padStart(2, '0');
+        let valueTime = `${currentHour.toString().padStart(2, '0')}:${displayMin}`;
+        
+        slots.push({
+            value: valueTime,
+            display: `${displayHour}:${displayMin} ${period}`
+        });
+        
+        currentMin += 30; // 30 minute slots
+        if (currentMin >= 60) {
+            currentHour += 1;
+            currentMin -= 60;
+        }
+    }
+    return slots;
+}
+
+function selectSlotCard(cardElement, day, startTime, endTime) {
+    // Reset all cards styling
+    document.querySelectorAll('.slot-card').forEach(card => {
+        card.style.borderColor = '#dee2e6';
+        card.style.backgroundColor = '#ffffff';
+    });
+    
+    // Style the selected card
+    cardElement.style.borderColor = '#0d6efd';
+    cardElement.style.backgroundColor = '#f0f7ff';
+    
+    // Populate Dates
+    const dateSelect = document.getElementById('id_appointment_date');
+    dateSelect.innerHTML = '';
+    const dates = getNextDates(day);
+    dates.forEach(d => {
+        const option = document.createElement('option');
+        const formattedVal = d.toISOString().split('T')[0];
+        const formattedDisp = d.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        option.value = formattedVal;
+        option.textContent = formattedDisp;
+        dateSelect.appendChild(option);
+    });
+    
+    // Populate Times
+    const timeSelect = document.getElementById('id_appointment_time');
+    timeSelect.innerHTML = '';
+    const times = generateTimeSlots(startTime, endTime);
+    times.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.value;
+        option.textContent = t.display;
+        timeSelect.appendChild(option);
+    });
+}
+
+function selectPaymentMethod(method) {
+    if (method === 'ONLINE') {
+        const r = document.getElementById('pay_online');
+        if (r) r.checked = true;
+    } else {
+        const r = document.getElementById('pay_clinic');
+        if (r) r.checked = true;
+    }
+    document.querySelectorAll('.payment-option-card').forEach(card => {
+        card.style.borderColor = '#dee2e6';
+        card.style.backgroundColor = '#ffffff';
+    });
+    const selectedInput = document.querySelector(`input[name="payment_method"][value="${method}"]`);
+    if (selectedInput) {
+        const parentCard = selectedInput.closest('.payment-option-card');
+        if (parentCard) {
+            parentCard.style.borderColor = '#0d6efd';
+            parentCard.style.backgroundColor = '#f8fbff';
+        }
+    }
+}
+</script>
+{% endblock %}

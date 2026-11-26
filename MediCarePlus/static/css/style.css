@@ -1,0 +1,93 @@
+/* ─── MediCarePlus Custom Styles ───────────────────────────────── */
+
+:root {
+    --primary: #0d6efd;
+    --success: #198754;
+    --medical-green: #20c997;
+    --light-blue: #e8f0fe;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f8f9fa;
+}
+
+/* Hero */
+.hero-section {
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0faf4 100%);
+    padding: 60px 0;
+    min-height: 75vh;
+    display: flex;
+    align-items: center;
+}
+
+.hero-img {
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+/* Cards */
+.medicine-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.medicine-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12) !important;
+}
+
+.category-card {
+    transition: all 0.2s;
+    border-radius: 12px;
+}
+.category-card:hover {
+    background: var(--light-blue);
+    transform: translateY(-4px);
+}
+
+/* Soft Background Utilities */
+.bg-primary-soft { background-color: #e8f0fe; }
+.bg-success-soft { background-color: #d4edda; }
+.bg-warning-soft { background-color: #fff3cd; }
+.bg-danger-soft { background-color: #f8d7da; }
+.text-success { color: #198754 !important; }
+
+/* Navbar */
+.navbar { padding: 12px 0; }
+
+/* Dashboard Cards */
+.card .border-start { border-left-width: 4px !important; }
+
+/* Sidebar Sticky */
+.sticky-sidebar { top: 80px; }
+
+/* Typing Animation */
+.typing-dots span {
+    animation: blink 1.4s infinite;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+
+/* Toast */
+.toast-container { z-index: 9999; }
+
+/* Buttons */
+.btn { border-radius: 8px; }
+.btn-lg { padding: 12px 28px; }
+
+/* Table */
+.table th { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Responsive */
+@media (max-width: 576px) {
+    .hero-section { padding: 40px 0; min-height: auto; }
+    .display-4 { font-size: 2rem; }
+}

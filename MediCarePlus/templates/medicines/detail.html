@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ medicine.name }} - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'medicines:home' %}" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'medicines:list' %}" class="text-decoration-none">Medicines</a></li>
+            <li class="breadcrumb-item active">{{ medicine.name|truncatechars:30 }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+
+        <!-- Image -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm p-3 text-center sticky-top" style="top:80px;">
+                <img src="{{ medicine.get_image_url }}"
+                     alt="{{ medicine.name }}"
+                     class="img-fluid rounded-3"
+                     style="max-height:320px; object-fit:contain;">
+                {% if medicine.discount > 0 %}
+                <span class="badge bg-danger position-absolute top-0 end-0 m-3 fs-6">{{ medicine.discount|floatformat:0 }}% OFF</span>
+                {% endif %}
+                {% if medicine.prescription_required %}
+                <div class="alert alert-warning mt-3 mb-0 py-2 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Prescription Required</strong> — Please upload a valid prescription.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="col-lg-5">
+            <span class="badge bg-primary-soft text-primary mb-2">{{ medicine.category.name|default:"General" }}</span>
+            <h2 class="fw-bold mb-2">{{ medicine.name }}</h2>
+            <p class="text-muted small mb-3">by <strong>{{ medicine.manufacturer }}</strong></p>
+
+            <!-- Rating -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+                {% for i in "12345" %}
+                <i class="bi bi-star{% if forloop.counter <= avg_rating %}-fill text-warning{% else %} text-muted{% endif %}"></i>
+                {% endfor %}
+                <span class="text-muted small">({{ reviews.count }} reviews)</span>
+            </div>
+
+            <!-- Price -->
+            <div class="mb-3">
+                <span class="display-6 fw-bold text-primary">₹{{ medicine.discounted_price|floatformat:2 }}</span>
+                {% if medicine.discount > 0 %}
+                <span class="text-muted text-decoration-line-through fs-5 ms-2">₹{{ medicine.price }}</span>
+                <span class="badge bg-success ms-2">Save ₹{{ medicine.price|floatformat:2 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Stock Status -->
+            {% if medicine.is_in_stock %}
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span class="text-success fw-semibold">In Stock ({{ medicine.stock }} units available)</span>
+            </div>
+            {% else %}
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-x-circle-fill text-danger"></i>
+                <span class="text-danger fw-semibold">Out of Stock</span>
+            </div>
+            {% endif %}
+
+            <!-- Expiry -->
+            <p class="text-muted small mb-3">
+                <i class="bi bi-calendar3 me-1"></i>Expiry: <strong>{{ medicine.expiry_date|date:"M Y" }}</strong>
+            </p>
+
+            <!-- Description -->
+            <div class="mb-4">
+                <h6 class="fw-bold">Description</h6>
+                <p class="text-muted">{{ medicine.description }}</p>
+            </div>
+
+            <!-- Add to Cart -->
+            {% if medicine.is_in_stock %}
+            <form method="post" action="{% url 'cart:add' medicine.id %}" class="mb-3">
+                {% csrf_token %}
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <label class="fw-semibold">Quantity:</label>
+                    <div class="input-group" style="width:140px;">
+                        <button type="button" class="btn btn-outline-secondary qty-btn" data-action="decrease">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <input type="number" name="quantity" value="1" min="1" max="{{ medicine.stock }}"
+                               class="form-control text-center fw-bold">
+                        <button type="button" class="btn btn-outline-secondary qty-btn" data-action="increase">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                    </button>
+                    <a href="{% url 'medicines:toggle_wishlist' medicine.id %}"
+                       class="btn btn-outline-danger btn-lg px-3"
+                       title="{% if in_wishlist %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}">
+                        <i class="bi bi-heart{% if in_wishlist %}-fill{% endif %}"></i>
+                    </a>
+                </div>
+            </form>
+            {% else %}
+            <button class="btn btn-secondary btn-lg w-100 mb-3" disabled>
+                <i class="bi bi-x-circle me-2"></i>Out of Stock
+            </button>
+            {% endif %}
+
+            {% if medicine.prescription_required %}
+            <a href="{% url 'prescriptions:upload' %}" class="btn btn-outline-warning w-100 mt-1">
+                <i class="bi bi-file-medical me-2"></i>Upload Prescription
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-truck me-2 text-primary"></i>Delivery Info</h6>
+                    <p class="small text-muted mb-2"><i class="bi bi-check text-success me-2"></i>Free delivery on orders above ₹499</p>
+                    <p class="small text-muted mb-2"><i class="bi bi-check text-success me-2"></i>Same day delivery available</p>
+                    <p class="small text-muted mb-0"><i class="bi bi-check text-success me-2"></i>Easy 7-day return policy</p>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-shield-check me-2 text-success"></i>Authenticity</h6>
+                    <p class="small text-muted mb-0">All medicines are sourced from certified manufacturers and verified by our pharmacists.</p>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-chat-dots me-2 text-primary"></i>Need Help?</h6>
+                    <a href="{% url 'chatbot:chat' %}" class="btn btn-outline-primary btn-sm w-100 mb-2">Ask MediBot</a>
+                    <p class="small text-muted mb-0 text-center">Available 24/7</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs: Reviews & Similar -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <ul class="nav nav-tabs border-0 mb-4" id="medicineTabs">
+                <li class="nav-item">
+                    <a class="nav-link active fw-semibold" data-bs-toggle="tab" href="#reviews-tab">
+                        <i class="bi bi-star me-1"></i>Reviews ({{ reviews.count }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold" data-bs-toggle="tab" href="#similar-tab">
+                        <i class="bi bi-grid me-1"></i>Similar Products
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+
+                <!-- Reviews Tab -->
+                <div class="tab-pane fade show active" id="reviews-tab">
+                    {% if user.is_authenticated and user.is_patient %}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h6 class="fw-bold mb-0">Write a Review</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'reviews:medicine_review' medicine.id %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Rating</label>
+                                    <div class="star-rating d-flex gap-2">
+                                        {% for i in "54321" %}
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input visually-hidden" type="radio" name="rating" id="star{{ i }}" value="{{ i }}">
+                                            <label class="form-check-label fs-4 star-label" for="star{{ i }}">
+                                                <i class="bi bi-star text-warning"></i>
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Your Review</label>
+                                    <textarea name="comment" class="form-control" rows="3" placeholder="Share your experience with this medicine..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send me-1"></i>Submit Review
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Reviews List -->
+                    {% for review in reviews %}
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <img src="{{ review.user.get_profile_image_url }}"
+                                         class="rounded-circle"
+                                         width="40" height="40"
+                                         style="object-fit:cover;">
+                                    <div>
+                                        <p class="fw-semibold mb-0">{{ review.user.get_full_name|default:review.user.email }}</p>
+                                        <small class="text-muted">{{ review.created_at|date:"d M Y" }}</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    {% for i in "12345" %}
+                                    <i class="bi bi-star{% if forloop.counter <= review.rating %}-fill text-warning{% else %} text-muted{% endif %} small"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="text-muted mb-0">{{ review.comment }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-chat-square-text text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No reviews yet. Be the first to review!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Similar Products Tab -->
+                <div class="tab-pane fade" id="similar-tab">
+                    <div class="row g-3">
+                        {% for med in similar %}
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm h-100 medicine-card">
+                                <img src="{{ med.get_image_url }}" class="card-img-top" alt="{{ med.name }}" style="height:130px; object-fit:cover;">
+                                <div class="card-body">
+                                    <h6 class="fw-semibold small mb-2">
+                                        <a href="{% url 'medicines:detail' med.id %}" class="text-dark text-decoration-none">{{ med.name|truncatechars:35 }}</a>
+                                    </h6>
+                                    <span class="fw-bold text-primary">₹{{ med.discounted_price|floatformat:2 }}</span>
+                                    <form method="post" action="{% url 'cart:add' med.id %}" class="mt-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="quantity" value="1">
+                                        <button class="btn btn-sm btn-outline-primary w-100">Add to Cart</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No similar products found.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Quantity buttons
+document.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const input = this.closest('.input-group').querySelector('input[name="quantity"]');
+        let val = parseInt(input.value) || 1;
+        const max = parseInt(input.max) || 99;
+        if (this.dataset.action === 'increase' && val < max) input.value = val + 1;
+        if (this.dataset.action === 'decrease' && val > 1) input.value = val - 1;
+    });
+});
+
+// Star rating hover
+document.querySelectorAll('.star-label').forEach((label, index, labels) => {
+    label.addEventListener('mouseover', function () {
+        labels.forEach((l, i) => {
+            l.querySelector('i').className = i <= index ? 'bi bi-star-fill text-warning' : 'bi bi-star text-warning';
+        });
+    });
+});
+</script>
+{% endblock %}

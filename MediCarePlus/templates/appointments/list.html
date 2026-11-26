@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}My Appointments - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-calendar me-2 text-primary"></i>My Appointments</h4>
+            <p class="text-muted mb-0">View and manage your doctor appointments</p>
+        </div>
+        <a href="{% url 'appointments:doctor_list' %}" class="btn btn-primary">
+            <i class="bi bi-plus me-1"></i>Book New Appointment
+        </a>
+    </div>
+
+    {% if appointments %}
+    <div class="row g-3">
+        {% for appt in appointments %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-1 text-center">
+                            <img src="{% if appt.doctor.doctor_profile.doctor_image %}{{ appt.doctor.doctor_profile.doctor_image.url }}{% else %}/static/images/doctor1.jpg{% endif %}"
+                                 class="rounded-circle"
+                                 width="55" height="55"
+                                 style="object-fit:cover;">
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold mb-0">Dr. {{ appt.doctor.get_full_name }}</h6>
+                            <p class="text-muted small mb-0">{{ appt.doctor.doctor_profile.specialization }}</p>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <p class="small text-muted mb-0">Date</p>
+                            <p class="fw-semibold mb-0">{{ appt.appointment_date|date:"d M Y" }}</p>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <p class="small text-muted mb-0">Time</p>
+                            <p class="fw-semibold mb-0">{{ appt.appointment_time|time:"h:i A" }}</p>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div>
+                                <span class="badge px-3 py-1 mb-1
+                                    {% if appt.status == 'APPROVED' %}bg-success
+                                    {% elif appt.status == 'REJECTED' %}bg-danger
+                                    {% elif appt.status == 'PENDING' %}bg-warning text-dark
+                                    {% elif appt.status == 'COMPLETED' %}bg-info text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ appt.status }}
+                                </span>
+                            </div>
+                            <div>
+                                {% if appt.payment_status == 'PAID' %}
+                                <span class="badge bg-success-subtle text-success border border-success" style="font-size: 0.72rem;">
+                                    <i class="bi bi-check-circle me-1"></i>Paid ₹{{ appt.consultation_fee }}
+                                </span>
+                                {% elif appt.payment_status == 'PAY_AT_CLINIC' %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary" style="font-size: 0.72rem;">
+                                    <i class="bi bi-hospital me-1"></i>Clinic ₹{{ appt.consultation_fee }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="font-size: 0.72rem;">
+                                    Unpaid ₹{{ appt.consultation_fee }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-1 text-end d-flex gap-1 justify-content-end align-items-center">
+                            {% if appt.payment_status == 'PENDING' %}
+                            <a href="{% url 'payments:initiate_appointment' appt.id %}" class="btn btn-sm btn-success" title="Pay Consultation Fee">
+                                <i class="bi bi-credit-card"></i>
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#apptModal{{ appt.id }}"
+                                    title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Modal -->
+            <div class="modal fade" id="apptModal{{ appt.id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4">
+                        <div class="modal-header bg-primary text-white border-0 rounded-top-4">
+                            <h5 class="modal-title fw-bold">Appointment Details</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <p class="small text-muted mb-0">Doctor</p>
+                                    <p class="fw-semibold mb-0">Dr. {{ appt.doctor.get_full_name }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="small text-muted mb-0">Specialization</p>
+                                    <p class="fw-semibold mb-0">{{ appt.doctor.doctor_profile.specialization }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="small text-muted mb-0">Date</p>
+                                    <p class="fw-semibold mb-0">{{ appt.appointment_date|date:"d M Y" }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="small text-muted mb-0">Time</p>
+                                    <p class="fw-semibold mb-0">{{ appt.appointment_time|time:"h:i A" }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="small text-muted mb-0">Consultation Fee</p>
+                                    <p class="fw-bold text-primary mb-0">₹{{ appt.consultation_fee }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="small text-muted mb-0">Payment Status</p>
+                                    {% if appt.payment_status == 'PAID' %}
+                                    <span class="badge bg-success-subtle text-success border border-success">Paid Online</span>
+                                    {% elif appt.payment_status == 'PAY_AT_CLINIC' %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary">Pay at Clinic</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning">Pending</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <p class="small text-muted mb-0">Status</p>
+                                    <span class="badge {% if appt.status == 'APPROVED' %}bg-success{% elif appt.status == 'REJECTED' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ appt.status }}
+                                    </span>
+                                    {% if appt.payment_status == 'PENDING' %}
+                                    <a href="{% url 'payments:initiate_appointment' appt.id %}" class="btn btn-sm btn-success ms-2">
+                                        <i class="bi bi-credit-card me-1"></i>Pay Consultation Fee Online
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12">
+                                    <p class="small text-muted mb-0">Reason</p>
+                                    <p class="mb-0">{{ appt.reason }}</p>
+                                </div>
+                                {% if appt.notes %}
+                                <div class="col-12">
+                                    <p class="small text-muted mb-0">Doctor's Notes</p>
+                                    <p class="mb-0 text-success">{{ appt.notes }}</p>
+                                </div>
+                                {% endif %}
+                                {% if appt.rejection_reason %}
+                                <div class="col-12">
+                                    <p class="small text-muted mb-0">Rejection Reason</p>
+                                    <p class="mb-0 text-danger">{{ appt.rejection_reason }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-calendar-x text-muted" style="font-size:5rem;"></i>
+        <h4 class="text-muted mt-3">No appointments yet</h4>
+        <p class="text-muted">Book an appointment with one of our verified doctors.</p>
+        <a href="{% url 'appointments:doctor_list' %}" class="btn btn-primary btn-lg mt-2">
+            <i class="bi bi-person-badge me-2"></i>Find a Doctor
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

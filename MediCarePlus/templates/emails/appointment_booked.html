@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0; padding:0; background-color:#f0f4f8; font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8; padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#0d6efd,#0a58ca); padding:28px 40px; text-align:center;">
+                            <h1 style="color:#ffffff; margin:0; font-size:24px; font-weight:700;">&#x2764;&#xFE0F; MediCarePlus</h1>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:40px;">
+                            <div style="text-align:center; margin-bottom:24px;">
+                                <span style="font-size:48px;">📅</span>
+                            </div>
+                            <h2 style="color:#1a1a2e; margin:0 0 8px; font-size:22px; font-weight:700; text-align:center;">
+                                Appointment Confirmed!
+                            </h2>
+                            <p style="color:#6c757d; font-size:15px; line-height:1.7; margin:16px 0 24px; text-align:center;">
+                                Hi <strong>{{ patient_name }}</strong>, your doctor appointment request has been scheduled successfully.
+                            </p>
+
+                            <!-- Appointment Summary Card -->
+                            <div style="background:#f8f9fa; border-radius:12px; padding:24px; margin:0 0 24px; border:1px solid #e9ecef;">
+                                <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="padding:8px 0; color:#6c757d; font-size:13px;">Doctor</td>
+                                        <td style="padding:8px 0; text-align:right; color:#1a1a2e; font-weight:700; font-size:14px;">
+                                            Dr. {{ doctor_name }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#6c757d; font-size:13px;">Specialization</td>
+                                        <td style="padding:8px 0; text-align:right; color:#0d6efd; font-weight:600; font-size:13px;">
+                                            {{ appointment.doctor.doctor_profile.specialization }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#6c757d; font-size:13px;">Date & Time</td>
+                                        <td style="padding:8px 0; text-align:right; color:#1a1a2e; font-weight:600; font-size:14px;">
+                                            {{ appointment.appointment_date|date:"D, d M Y" }} at {{ appointment.appointment_time|time:"h:i A" }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#6c757d; font-size:13px;">Consultation Fee</td>
+                                        <td style="padding:8px 0; text-align:right; color:#1a1a2e; font-weight:700; font-size:15px;">
+                                            ₹{{ appointment.consultation_fee }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 0; color:#6c757d; font-size:13px;">Payment Status</td>
+                                        <td style="padding:8px 0; text-align:right;">
+                                            {% if appointment.payment_status == 'PAID' %}
+                                            <span style="background:#d1e7dd; color:#0f5132; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">
+                                                &#x2705; Paid Online
+                                            </span>
+                                            {% elif appointment.payment_status == 'PAY_AT_CLINIC' %}
+                                            <span style="background:#cff4fc; color:#055160; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">
+                                                &#x1F4B5; Pay at Clinic
+                                            </span>
+                                            {% else %}
+                                            <span style="background:#fff3cd; color:#856404; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">
+                                                Pending
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if appointment.reason %}
+                                    <tr>
+                                        <td style="padding:8px 0; color:#6c757d; font-size:13px; vertical-align:top;">Reason for Visit</td>
+                                        <td style="padding:8px 0; text-align:right; color:#495057; font-size:13px;">
+                                            {{ appointment.reason }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+
+                            <!-- Instructions -->
+                            <div style="background:#e8f4fd; border-radius:8px; padding:16px; margin:0 0 24px; border-left:4px solid #0d6efd;">
+                                <p style="margin:0 0 6px; font-weight:600; color:#084298; font-size:13px;">Important Guidelines:</p>
+                                <ul style="margin:0; padding-left:18px; color:#495057; font-size:13px; line-height:1.6;">
+                                    <li>Please arrive 10 minutes prior to your scheduled consultation slot.</li>
+                                    <li>Carry any past medical reports, prescriptions, or test results.</li>
+                                    {% if appointment.payment_status == 'PAY_AT_CLINIC' %}
+                                    <li>Please keep ₹{{ appointment.consultation_fee }} ready for clinic reception payment.</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+
+                            <p style="color:#6c757d; font-size:13px; line-height:1.6; margin:24px 0 0; text-align:center;">
+                                Need to reschedule or have questions? Contact MediCarePlus 24/7 support.
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#f8f9fa; padding:20px 40px; text-align:center; border-top:1px solid #e9ecef;">
+                            <p style="color:#adb5bd; font-size:12px; margin:0;">&copy; 2026 MediCarePlus. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

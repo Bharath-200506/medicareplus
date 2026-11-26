@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Payment - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                {% if is_mock %}
+                <!-- Sandbox Mock Header -->
+                <div class="bg-warning text-dark py-4 text-center">
+                    <i class="bi bi-shield-slash fs-1 mb-2 d-block"></i>
+                    <h4 class="fw-bold mb-1">Payment Sandbox Mode</h4>
+                    <p class="mb-0 opacity-75">Simulated Payment for Order #{{ order.order_number }}</p>
+                </div>
+                {% else %}
+                <!-- Production Razorpay Header -->
+                <div class="bg-primary text-white py-4 text-center">
+                    <i class="bi bi-credit-card fs-1 mb-2 d-block"></i>
+                    <h4 class="fw-bold mb-1">Secure Payment</h4>
+                    <p class="mb-0 opacity-75">Order #{{ order.order_number }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="card-body p-5">
+                    {% if fallback_to_mock %}
+                    <div class="alert alert-warning small d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span><strong>Notice:</strong> Real Razorpay keys returned an authentication error. Falling back to safe Sandbox Simulator.</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Order Summary -->
+                    <div class="bg-light rounded-3 p-4 mb-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-receipt me-2 text-secondary"></i>Order Summary</h6>
+                        <div class="d-flex justify-content-between mb-2 small text-muted">
+                            <span>Subtotal</span>
+                            <span>₹{{ order.total_amount|floatformat:2 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small text-muted">
+                            <span>Delivery Fee</span>
+                            <span>₹{{ order.delivery_charge|floatformat:2 }}</span>
+                        </div>
+                        {% if order.discount_amount > 0 %}
+                        <div class="d-flex justify-content-between mb-2 small text-success">
+                            <span>Discount</span>
+                            <span>-₹{{ order.discount_amount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between fw-bold fs-5 text-dark">
+                            <span>Grand Total</span>
+                            <span class="text-primary">₹{{ order.grand_total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    {% if is_mock %}
+                    <!-- SIMULATED CHECKOUT DESIGN -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-muted small mb-3 text-uppercase">Simulated Credit Card Details</h6>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-semibold">Card Holder Name</label>
+                            <input type="text" class="form-control" value="{{ request.user.get_full_name|default:'Guest Patient' }}" readonly>
+                        </div>
+                        <div class="row">
+                            <div class="col-8 mb-3">
+                                <label class="form-label small text-muted fw-semibold">Card Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-credit-card"></i></span>
+                                    <input type="text" class="form-control" value="4111 2222 3333 4444" readonly>
+                                </div>
+                            </div>
+                            <div class="col-4 mb-3">
+                                <label class="form-label small text-muted fw-semibold">CVV</label>
+                                <input type="text" class="form-control" value="123" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info small d-flex align-items-center gap-2 mb-4">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>You are in test sandbox mode. Click the buttons below to simulate the bank response.</span>
+                        </div>
+                    </div>
+
+                    <form id="mock-payment-form" method="post" action="{% url 'payments:callback' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="razorpay_order_id" value="{{ razorpay_order_id }}">
+                        <input type="hidden" name="razorpay_payment_id" value="pay_mock_tx_{{ order.order_number }}">
+                        <input type="hidden" name="razorpay_signature" value="mock_signature">
+                        
+                        <button type="submit" class="btn btn-success w-100 btn-lg rounded-3 mb-2 shadow-sm">
+                            <i class="bi bi-check-circle me-2"></i>Simulate Success Payment
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'orders:list' %}" class="btn btn-outline-danger w-100 mt-2">
+                        <i class="bi bi-x-circle me-2"></i>Simulate Failed Payment
+                    </a>
+
+                    {% else %}
+                    <!-- PRODUCTION RAZORPAY DESIGN -->
+                    <div class="alert alert-success small d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-shield-check-fill text-success fs-5"></i>
+                        <span>256-bit SSL encrypted secure payment powered by Razorpay.</span>
+                    </div>
+
+                    <button id="rzp-button" class="btn btn-primary w-100 btn-lg rounded-3 shadow">
+                        <i class="bi bi-lock me-2"></i>Pay ₹{{ order.grand_total|floatformat:2 }} Securely
+                    </button>
+
+                    <a href="{% url 'orders:list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                        Cancel & Go Back
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not is_mock %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var options = {
+    "key": "{{ razorpay_key }}",
+    "amount": "{{ amount }}",
+    "currency": "INR",
+    "name": "MediCarePlus",
+    "description": "Order #{{ order.order_number }}",
+    "order_id": "{{ razorpay_order_id }}",
+    "callback_url": "{% url 'payments:callback' %}",
+    "prefill": {
+        "name": "{{ request.user.get_full_name }}",
+        "email": "{{ request.user.email }}",
+        "contact": "{{ request.user.phone|default:'' }}"
+    },
+    "theme": { "color": "#0d6efd" }
+};
+document.getElementById('rzp-button').onclick = function(e) {
+    var rzp = new Razorpay(options);
+    rzp.open();
+    e.preventDefault();
+};
+</script>
+{% endif %}
+{% endblock %}

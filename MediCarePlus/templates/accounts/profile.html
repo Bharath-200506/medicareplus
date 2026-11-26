@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% block title %}My Profile - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+
+        <!-- Left Profile Card -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm text-center p-4 sticky-top" style="top:80px;">
+                <div class="position-relative d-inline-block mx-auto mb-3">
+                    <img src="{{ request.user.get_profile_image_url }}"
+                         class="rounded-circle shadow"
+                         width="100" height="100"
+                         style="object-fit:cover;" id="profileImgPreview">
+                </div>
+                <h5 class="fw-bold mb-0">{{ request.user.get_full_name|default:"No Name" }}</h5>
+                <p class="text-muted small mb-2">{{ request.user.email }}</p>
+                <span class="badge bg-primary px-3 py-2 mb-3">{{ request.user.role }}</span>
+                <hr>
+                <div class="text-start">
+                    <p class="small mb-2"><i class="bi bi-envelope me-2 text-primary"></i>{{ request.user.email }}</p>
+                    {% if request.user.phone %}
+                    <p class="small mb-2"><i class="bi bi-telephone me-2 text-primary"></i>{{ request.user.phone }}</p>
+                    {% endif %}
+                    <p class="small mb-0"><i class="bi bi-calendar me-2 text-primary"></i>Joined {{ request.user.created_at|date:"M Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Content -->
+        <div class="col-lg-9">
+            <!-- Profile Form -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person me-2 text-primary"></i>Personal Information</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">First Name</label>
+                                {{ user_form.first_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Last Name</label>
+                                {{ user_form.last_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phone Number</label>
+                                {{ user_form.phone }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Profile Image</label>
+                                {{ user_form.profile_image }}
+                            </div>
+
+                            {% if profile_form %}
+                            <div class="col-12">
+                                <hr>
+                                <h6 class="fw-bold mb-3">
+                                    {% if request.user.is_patient %}Patient {% else %}Doctor {% endif %}Details
+                                </h6>
+                            </div>
+                            {% if request.user.is_patient %}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Date of Birth</label>
+                                {{ profile_form.date_of_birth }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Blood Group</label>
+                                {{ profile_form.blood_group }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Emergency Contact</label>
+                                {{ profile_form.emergency_contact }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Allergies</label>
+                                {{ profile_form.allergies }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Medical History</label>
+                                {{ profile_form.medical_history }}
+                            </div>
+                            {% elif request.user.is_doctor %}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Specialization</label>
+                                {{ profile_form.specialization }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Qualification</label>
+                                {{ profile_form.qualification }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Experience (Years)</label>
+                                {{ profile_form.experience_years }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Consultation Fee (₹)</label>
+                                {{ profile_form.consultation_fee }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Bio / About</label>
+                                {{ profile_form.bio }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ profile_form.is_available }}
+                                    <label class="form-check-label fw-semibold">Available for appointments</label>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="mt-4 d-flex gap-3">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-2"></i>Save Changes
+                            </button>
+                            <a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Addresses -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2 text-primary"></i>Saved Addresses</h5>
+                    <a href="{% url 'accounts:add_address' %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus me-1"></i>Add Address
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if addresses %}
+                    <div class="row g-3">
+                        {% for address in addresses %}
+                        <div class="col-md-6">
+                            <div class="card border {% if address.is_default %}border-primary bg-primary-soft{% endif %} h-100">
+                                <div class="card-body">
+                                    {% if address.is_default %}
+                                    <span class="badge bg-primary mb-2">Default</span>
+                                    {% endif %}
+                                    <p class="fw-semibold mb-1">{{ address.full_name }}</p>
+                                    <p class="text-muted small mb-1">{{ address.street }}</p>
+                                    <p class="text-muted small mb-1">{{ address.city }}, {{ address.state }} - {{ address.pincode }}</p>
+                                    <p class="text-muted small mb-0"><i class="bi bi-telephone me-1"></i>{{ address.phone }}</p>
+                                </div>
+                                <div class="card-footer bg-transparent border-0">
+                                    <a href="{% url 'accounts:delete_address' address.id %}"
+                                       class="btn btn-outline-danger btn-sm"
+                                       data-confirm="Delete this address?">
+                                        <i class="bi bi-trash me-1"></i>Delete
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-geo text-muted fs-2"></i>
+                        <p class="text-muted mt-2">No saved addresses yet.</p>
+                        <a href="{% url 'accounts:add_address' %}" class="btn btn-sm btn-primary">Add Address</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Profile image live preview
+document.querySelector('input[name="profile_image"]')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => document.getElementById('profileImgPreview').src = e.target.result;
+        reader.readAsDataURL(file);
+    }
+});
+
+document.querySelectorAll('[data-confirm]').forEach(el => {
+    el.addEventListener('click', e => {
+        if (!confirm(el.dataset.confirm)) e.preventDefault();
+    });
+});
+</script>
+{% endblock %}

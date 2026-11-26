@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Doctor Dashboard - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Welcome -->
+    <div class="card border-0 shadow-sm bg-success text-white rounded-4 mb-4">
+        <div class="card-body p-4 d-flex align-items-center gap-4">
+            <img src="{% if request.user.doctor_profile.doctor_image %}{{ request.user.doctor_profile.doctor_image.url }}{% else %}/static/images/doctor1.jpg{% endif %}"
+                 class="rounded-circle border border-3 border-white"
+                 width="80" height="80" style="object-fit:cover;">
+            <div>
+                <h4 class="fw-bold mb-1">Dr. {{ request.user.get_full_name }}</h4>
+                <p class="mb-1 opacity-75">{{ request.user.doctor_profile.specialization }}</p>
+                <p class="mb-0 opacity-75 small">{{ request.user.doctor_profile.qualification }}</p>
+            </div>
+            <div class="ms-auto text-end">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-light btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Edit Profile
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3 border-start border-warning border-4">
+                <i class="bi bi-hourglass-split text-warning fs-2 mb-2"></i>
+                <h3 class="fw-bold mb-0">{{ pending_appointments }}</h3>
+                <small class="text-muted">Pending</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3 border-start border-primary border-4">
+                <i class="bi bi-calendar-check text-primary fs-2 mb-2"></i>
+                <h3 class="fw-bold mb-0">{{ today_appointments.count }}</h3>
+                <small class="text-muted">Today</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3 border-start border-success border-4">
+                <i class="bi bi-people text-success fs-2 mb-2"></i>
+                <h3 class="fw-bold mb-0">{{ total_patients }}</h3>
+                <small class="text-muted">Total Patients</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center p-3 border-start border-info border-4">
+                <i class="bi bi-file-medical text-info fs-2 mb-2"></i>
+                <h3 class="fw-bold mb-0">{{ pending_prescriptions }}</h3>
+                <small class="text-muted">Pending Rx</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <a href="{% url 'appointments:doctor_appointments' %}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm text-center p-3 category-card">
+                    <i class="bi bi-calendar2-check text-primary fs-2 mb-2"></i>
+                    <p class="fw-semibold mb-0 small">Appointments</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'prescriptions:review' %}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm text-center p-3 category-card">
+                    <i class="bi bi-file-earmark-check text-success fs-2 mb-2"></i>
+                    <p class="fw-semibold mb-0 small">Review Prescriptions</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'accounts:profile' %}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm text-center p-3 category-card">
+                    <i class="bi bi-gear text-secondary fs-2 mb-2"></i>
+                    <p class="fw-semibold mb-0 small">Manage Availability</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'chatbot:chat' %}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm text-center p-3 category-card">
+                    <i class="bi bi-robot text-info fs-2 mb-2"></i>
+                    <p class="fw-semibold mb-0 small">MediBot</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Today's Appointments & Recent Activity -->
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-calendar me-2 text-primary"></i>Today's Appointments</h5>
+                    <a href="{% url 'appointments:doctor_appointments' %}" class="btn btn-sm btn-outline-primary">Manage All</a>
+                </div>
+                <div class="card-body">
+                    {% if today_appointments %}
+                    {% for appt in today_appointments %}
+                    <div class="d-flex align-items-center gap-3 mb-3 p-3 border rounded-3">
+                        <img src="{{ appt.patient.get_profile_image_url }}" class="rounded-circle" width="45" height="45" style="object-fit:cover;">
+                        <div class="flex-grow-1">
+                            <p class="fw-semibold mb-0">{{ appt.patient.get_full_name|default:appt.patient.email }}</p>
+                            <small class="text-muted">{{ appt.appointment_time|time:"h:i A" }} · {{ appt.reason|truncatechars:40 }}</small>
+                        </div>
+                        <span class="badge {% if appt.status == 'APPROVED' %}bg-success{% elif appt.status == 'PENDING' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ appt.status }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No appointments scheduled for today</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Recent Appointments</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for appt in recent_appointments %}
+                        <div class="list-group-item border-0 px-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="fw-semibold mb-0 small">{{ appt.patient.get_full_name|default:appt.patient.email }}</p>
+                                    <small class="text-muted">{{ appt.appointment_date|date:"d M Y" }}</small>
+                                </div>
+                                <span class="badge
+                                    {% if appt.status == 'APPROVED' %}bg-success
+                                    {% elif appt.status == 'REJECTED' %}bg-danger
+                                    {% elif appt.status == 'PENDING' %}bg-warning text-dark
+                                    {% else %}bg-info text-dark{% endif %} small">
+                                    {{ appt.status }}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted small">No recent appointments</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

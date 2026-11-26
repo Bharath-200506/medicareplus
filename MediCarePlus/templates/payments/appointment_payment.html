@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}Appointment Payment - Dr. {{ doctor.get_full_name }} - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                {% if is_mock %}
+                <!-- Sandbox Mock Header -->
+                <div class="bg-warning text-dark py-4 text-center">
+                    <i class="bi bi-shield-slash fs-1 mb-2 d-block"></i>
+                    <h4 class="fw-bold mb-1">Appointment Payment Sandbox</h4>
+                    <p class="mb-0 opacity-75">Simulated Payment for Appointment #{{ appointment.id }}</p>
+                </div>
+                {% else %}
+                <!-- Production Razorpay Header -->
+                <div class="bg-primary text-white py-4 text-center">
+                    <i class="bi bi-credit-card fs-1 mb-2 d-block"></i>
+                    <h4 class="fw-bold mb-1">Secure Consultation Payment</h4>
+                    <p class="mb-0 opacity-75">Appointment with Dr. {{ doctor.get_full_name }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="card-body p-4 p-md-5">
+                    {% if fallback_to_mock %}
+                    <div class="alert alert-warning small d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span><strong>Notice:</strong> Razorpay test credentials not configured. Falling back to Sandbox Simulator.</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Doctor & Slot Details -->
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 mb-4">
+                        <img src="{% if doctor.doctor_profile.doctor_image %}{{ doctor.doctor_profile.doctor_image.url }}{% else %}/static/images/doctor1.jpg{% endif %}"
+                             class="rounded-circle shadow-sm"
+                             width="60" height="60"
+                             style="object-fit:cover;">
+                        <div>
+                            <h6 class="fw-bold mb-0">Dr. {{ doctor.get_full_name }}</h6>
+                            <p class="text-primary small mb-1">{{ doctor.doctor_profile.specialization }}</p>
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-calendar3 me-1"></i>{{ appointment.appointment_date|date:"D, d M Y" }} &nbsp;|&nbsp;
+                                <i class="bi bi-clock me-1"></i>{{ appointment.appointment_time|time:"h:i A" }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="bg-light rounded-3 p-4 mb-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-receipt me-2 text-secondary"></i>Fee Summary</h6>
+                        <div class="d-flex justify-content-between mb-2 small text-muted">
+                            <span>Doctor Consultation Fee</span>
+                            <span>₹{{ appointment.consultation_fee|floatformat:2 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small text-muted">
+                            <span>Platform & Booking Fee</span>
+                            <span class="text-success">FREE</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between fw-bold fs-5 text-dark">
+                            <span>Total Payable</span>
+                            <span class="text-primary">₹{{ appointment.consultation_fee|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    {% if is_mock %}
+                    <!-- SIMULATED CHECKOUT DESIGN -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-muted small mb-3 text-uppercase">Simulated Card Details</h6>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-semibold">Patient Name</label>
+                            <input type="text" class="form-control" value="{{ request.user.get_full_name|default:'Patient' }}" readonly>
+                        </div>
+                        <div class="row">
+                            <div class="col-8 mb-3">
+                                <label class="form-label small text-muted fw-semibold">Card Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-credit-card"></i></span>
+                                    <input type="text" class="form-control" value="4111 2222 3333 4444" readonly>
+                                </div>
+                            </div>
+                            <div class="col-4 mb-3">
+                                <label class="form-label small text-muted fw-semibold">CVV</label>
+                                <input type="text" class="form-control" value="888" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info small d-flex align-items-center gap-2 mb-4">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <span>You are in test sandbox mode. Click below to simulate instant payment confirmation and email dispatch.</span>
+                        </div>
+                    </div>
+
+                    <form id="mock-payment-form" method="post" action="{% url 'payments:callback' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="razorpay_order_id" value="{{ razorpay_order_id }}">
+                        <input type="hidden" name="razorpay_payment_id" value="pay_mock_appt_tx_{{ appointment.id }}">
+                        <input type="hidden" name="razorpay_signature" value="mock_signature">
+                        
+                        <button type="submit" class="btn btn-success w-100 btn-lg rounded-3 mb-2 shadow-sm">
+                            <i class="bi bi-check-circle me-2"></i>Pay ₹{{ appointment.consultation_fee|floatformat:2 }} & Confirm Appointment
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'appointments:list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="bi bi-arrow-left me-1"></i>Pay Later / View Appointments
+                    </a>
+
+                    {% else %}
+                    <!-- PRODUCTION RAZORPAY DESIGN -->
+                    <div class="alert alert-success small d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-shield-check-fill text-success fs-5"></i>
+                        <span>256-bit SSL encrypted secure payment powered by Razorpay.</span>
+                    </div>
+
+                    <button id="rzp-button" class="btn btn-primary w-100 btn-lg rounded-3 shadow">
+                        <i class="bi bi-lock me-2"></i>Pay ₹{{ appointment.consultation_fee|floatformat:2 }} Securely
+                    </button>
+
+                    <a href="{% url 'appointments:list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                        Cancel & Go Back
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not is_mock %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var options = {
+    "key": "{{ razorpay_key }}",
+    "amount": "{{ amount }}",
+    "currency": "INR",
+    "name": "MediCarePlus",
+    "description": "Consultation with Dr. {{ doctor.get_full_name }}",
+    "order_id": "{{ razorpay_order_id }}",
+    "callback_url": "{% url 'payments:callback' %}",
+    "prefill": {
+        "name": "{{ request.user.get_full_name }}",
+        "email": "{{ request.user.email }}",
+        "contact": "{{ request.user.phone|default:'' }}"
+    },
+    "theme": { "color": "#0d6efd" }
+};
+document.getElementById('rzp-button').onclick = function(e) {
+    var rzp = new Razorpay(options);
+    rzp.open();
+    e.preventDefault();
+};
+</script>
+{% endif %}
+{% endblock %}

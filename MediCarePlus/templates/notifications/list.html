@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Notifications - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold mb-0"><i class="bi bi-bell me-2 text-primary"></i>Notifications</h4>
+                <span class="badge bg-primary rounded-pill">{{ notifications.count }}</span>
+            </div>
+
+            {% if notifications %}
+                {% regroup notifications by notification_type as grouped_notifs %}
+                {% for group in grouped_notifs %}
+                <div class="mb-3">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2 ms-1">
+                        {% if group.grouper == 'ORDER' %}<i class="bi bi-bag me-1"></i>
+                        {% elif group.grouper == 'APPOINTMENT' %}<i class="bi bi-calendar me-1"></i>
+                        {% elif group.grouper == 'PAYMENT' %}<i class="bi bi-credit-card me-1"></i>
+                        {% elif group.grouper == 'PRESCRIPTION' %}<i class="bi bi-file-medical me-1"></i>
+                        {% else %}<i class="bi bi-bell me-1"></i>{% endif %}
+                        {{ group.grouper }}
+                    </h6>
+                    {% for notif in group.list %}
+                    <div class="card border-0 shadow-sm mb-2 {% if not notif.is_read %}border-start border-primary border-3{% endif %}">
+                        <div class="card-body py-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0
+                                        {% if notif.notification_type == 'ORDER' %}bg-primary-soft
+                                        {% elif notif.notification_type == 'APPOINTMENT' %}bg-success-soft
+                                        {% elif notif.notification_type == 'PAYMENT' %}bg-warning-soft
+                                        {% else %}bg-secondary-soft{% endif %}"
+                                        style="width:42px;height:42px;">
+                                        <i class="bi bi-
+                                            {% if notif.notification_type == 'ORDER' %}bag text-primary
+                                            {% elif notif.notification_type == 'APPOINTMENT' %}calendar-check text-success
+                                            {% elif notif.notification_type == 'PAYMENT' %}credit-card text-warning
+                                            {% elif notif.notification_type == 'PRESCRIPTION' %}file-medical text-info
+                                            {% else %}bell text-secondary{% endif %}">
+                                        </i>
+                                    </div>
+                                    <div>
+                                        <p class="mb-0 {% if not notif.is_read %}fw-semibold{% endif %}">{{ notif.message }}</p>
+                                        <small class="text-muted">{{ notif.created_at|timesince }} ago</small>
+                                    </div>
+                                </div>
+                                {% if not notif.is_read %}
+                                <span class="badge rounded-pill bg-primary ms-2 flex-shrink-0">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bell-slash text-muted" style="font-size:5rem;"></i>
+                <h4 class="text-muted mt-3">No notifications yet</h4>
+                <p class="text-muted">You'll be notified about your orders, appointments, and prescriptions here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

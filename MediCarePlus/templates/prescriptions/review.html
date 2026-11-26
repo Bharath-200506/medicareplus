@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Review Prescriptions - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-medical-fill me-2 text-primary"></i>Review Prescriptions</h4>
+            <p class="text-muted mb-0">Evaluate patient uploaded prescriptions to authorize Rx medicine orders</p>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3 small shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if prescriptions %}
+    <div class="row g-4">
+        {% for prescription in prescriptions %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
+                <!-- Top Accent -->
+                <div class="bg-warning py-1"></div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-1">Prescription #{{ prescription.id }}</h6>
+                            <small class="text-muted"><i class="bi bi-clock me-1"></i>Uploaded: {{ prescription.uploaded_at|date:"d M Y, h:i A" }}</small>
+                        </div>
+                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">PENDING</span>
+                    </div>
+
+                    <!-- Patient Info Block -->
+                    <div class="bg-light p-3 rounded-3 mb-3">
+                        <span class="text-muted small d-block mb-1">Patient Details</span>
+                        <h6 class="fw-bold mb-1 text-dark">{{ prescription.patient.get_full_name|default:prescription.patient.email }}</h6>
+                        <small class="text-muted d-block mb-1"><i class="bi bi-envelope me-1"></i>{{ prescription.patient.email }}</small>
+                        {% if prescription.patient.phone %}
+                        <small class="text-muted d-block"><i class="bi bi-telephone me-1"></i>{{ prescription.patient.phone }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success flex-grow-1" data-bs-toggle="modal" data-bs-target="#approveModal{{ prescription.id }}">
+                            <i class="bi bi-check-circle me-1"></i>Approve
+                        </button>
+                        <button class="btn btn-sm btn-danger flex-grow-1" data-bs-toggle="modal" data-bs-target="#rejectModal{{ prescription.id }}">
+                            <i class="bi bi-x-circle me-1"></i>Reject
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-top-0 p-4 pt-0">
+                    <a href="{{ prescription.file.url }}" target="_blank" class="btn btn-outline-primary w-100 fw-semibold">
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i>View File / Image
+                    </a>
+                </div>
+            </div>
+
+            <!-- Approve Modal -->
+            <div class="modal fade" id="approveModal{{ prescription.id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4">
+                        <div class="modal-header bg-success text-white border-0 rounded-top-4">
+                            <h5 class="modal-title fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Approve Prescription</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" action="{% url 'prescriptions:approve' prescription.id %}">
+                            {% csrf_token %}
+                            <div class="modal-body p-4">
+                                <p class="text-muted mb-3">You are approving Prescription #{{ prescription.id }} uploaded by <strong>{{ prescription.patient.get_full_name|default:prescription.patient.email }}</strong>.</p>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Prescription Notes (Optional)</label>
+                                    <textarea name="notes" class="form-control" rows="3" placeholder="Add approval remarks or specific instructions for the pharmacist..."></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Approve</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reject Modal -->
+            <div class="modal fade" id="rejectModal{{ prescription.id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4">
+                        <div class="modal-header bg-danger text-white border-0 rounded-top-4">
+                            <h5 class="modal-title fw-bold"><i class="bi bi-x-circle-fill me-2"></i>Reject Prescription</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" action="{% url 'prescriptions:reject' prescription.id %}">
+                            {% csrf_token %}
+                            <div class="modal-body p-4">
+                                <p class="text-muted mb-3">You are rejecting Prescription #{{ prescription.id }} uploaded by <strong>{{ prescription.patient.get_full_name|default:prescription.patient.email }}</strong>.</p>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                                    <textarea name="rejection_reason" class="form-control" rows="3" placeholder="Please explain why the prescription was rejected (e.g. Signature missing, Expired, Unclear text)..." required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Reject</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-check2-circle text-success" style="font-size: 5rem;"></i>
+            <h4 class="fw-bold text-dark mt-3">All Caught Up!</h4>
+            <p class="text-muted mb-0">No pending prescriptions require review at this time.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}My Cart - MediCarePlus{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h4 class="fw-bold mb-4"><i class="bi bi-cart3 me-2"></i>Shopping Cart</h4>
+    {% if items %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            {% for item in items %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-2">
+                            <img src="{{ item.medicine.get_image_url }}" class="img-fluid rounded" alt="{{ item.medicine.name }}" style="height:70px; object-fit:cover;">
+                        </div>
+                        <div class="col-5">
+                            <h6 class="fw-semibold mb-1">{{ item.medicine.name }}</h6>
+                            <small class="text-muted">{{ item.medicine.manufacturer }}</small>
+                            {% if item.medicine.prescription_required %}
+                            <span class="badge bg-warning text-dark ms-2">Rx Required</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-2">
+                            <form method="post" action="{% url 'cart:update' item.id %}">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.medicine.stock }}" class="form-control form-control-sm text-center" onchange="this.form.submit()">
+                            </form>
+                        </div>
+                        <div class="col-2 text-end">
+                            <p class="fw-bold text-primary mb-0">₹{{ item.subtotal|floatformat:2 }}</p>
+                            <small class="text-muted">₹{{ item.medicine.discounted_price }} each</small>
+                        </div>
+                        <div class="col-1 text-end">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'cart:save_for_later' item.id %}"><i class="bi bi-bookmark me-2"></i>Save for Later</a></li>
+                                    <li><a class="dropdown-item text-danger" href="{% url 'cart:remove' item.id %}"><i class="bi bi-trash me-2"></i>Remove</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if saved_items %}
+            <h5 class="fw-bold mt-4 mb-3">Saved for Later</h5>
+            {% for item in saved_items %}
+            <div class="card border-0 shadow-sm mb-2 bg-light">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <p class="mb-0 fw-semibold">{{ item.medicine.name }}</p>
+                            <small class="text-muted">₹{{ item.medicine.discounted_price }}</small>
+                        </div>
+                        <div class="col-4 text-end">
+                            <a href="{% url 'cart:move_to_cart' item.id %}" class="btn btn-sm btn-primary me-1">Move to Cart</a>
+                            <a href="{% url 'cart:remove' item.id %}" class="btn btn-sm btn-outline-danger">Remove</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in items %}
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span class="text-muted">{{ item.medicine.name|truncatechars:25 }} x{{ item.quantity }}</span>
+                        <span>₹{{ item.subtotal|floatformat:2 }}</span>
+                    </div>
+                    {% endfor %}
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Subtotal</span>
+                        <span>₹{{ cart.total_price|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Delivery</span>
+                        <span class="text-success">₹50</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Total</span>
+                        <span class="text-primary">₹{{ cart.total_price|floatformat:2 }}</span>
+                    </div>
+                    <a href="{% url 'orders:checkout' %}" class="btn btn-success w-100 btn-lg mt-3">
+                        <i class="bi bi-lock me-2"></i>Proceed to Checkout
+                    </a>
+                    <a href="{% url 'medicines:list' %}" class="btn btn-outline-primary w-100 mt-2">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-cart-x text-muted" style="font-size:5rem;"></i>
+        <h4 class="text-muted mt-3">Your cart is empty</h4>
+        <p class="text-muted">Add some medicines to your cart to get started.</p>
+        <a href="{% url 'medicines:list' %}" class="btn btn-primary btn-lg mt-2">
+            <i class="bi bi-capsule me-2"></i>Browse Medicines
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
